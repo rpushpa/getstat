@@ -50,8 +50,8 @@ from kw_rank1_ptn where r_kw_url >1 group by keyword,market,device order  by  ma
 on a.keyword=b.keyword and a.market=b.market and a.device=b.device order by keyword,market,device,crawl_dt;
 
 ---For scenario3:to check on few keywords on convergence/divergence scrore
-select keyword,market,device,crawl_dt,convergance_score
+select keyword,market,crawl_dt,convergance_score
 from kw_convergence_detail
 where keyword in ('360i digital marketing','360i search marketing','google update','google updates')
-order by keyword,market,device,crawl_dt;
+order by keyword,market,crawl_dt;
  
