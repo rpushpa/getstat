@@ -1,0 +1,57 @@
+Steps to execute:
+Assumptions:a linux sysytem with Hadoop is installed and hive is configured to create tables from the hdfs files.
+
+1.Download all  below listed four scripts in the same dairectory where data  will be  downloaded 
+ --getstat_com_serp_report_process.sh 
+ --stg_keyword_rank.hql
+ --partitioned_kw_rank.hql
+ --getstat_final_steps.hql
+
+2.run unix command chmod 777 *  for all three files
+3.in hive :pls create a database stat using below command
+
+4.create database getstat;
+
+5.run the script getstat_com_serp_report_process.sh with three parameters like below:
+
+./getstat_com_serp_report_process.sh  /root/pushpa/data https://stat-ds-test.s3.amazonaws.com/getstat_com_serp_report_201707.csv.gz  pushpa/data  >/root/pushpa/data/getstat_com_serp_report_process_log_`date +"%Y%m"`.log 2>&1
+
+1.parameter for the directory path to unload the file
+2.file path to download the file
+3.HDFS location where the file can be copied
+
+The log of the execution of script  can be viwed from the path and file specified as /root/pushpa/data/getstat_com_serp_report_process_log_`date +"%Y%m"`.log
+
+6.The script will download the file,unzip,load into stage and  create target partitioned tables.Also will create the tables to get results for further analysis on the scenarios given.
+
+7.Use the below SQLs to get result set for scenario 1 , scenario 2, scenario 3
+
+optional:Visualization:
+
+Tableau must be installed and hive data store needs to connected.
+
+table kw_convergence_detail  needs to considered as datasource and plot the graph.
+
+columns must be chosen as keyword,crawl_dt
+and rows must be chosen as AVG(convergance_score)
+filter the data for market like 
+
+
+
+---for scenario1: use the SQL to find the top  10 URLs that are most common across all keywords
+use getstat;
+select kw_url,count(*) as cnt from partitioned_kw_rank where dt <'2017-08-01' and kw_rank<10 group by  kw_url order by cnt desc limit 10;
+
+
+---for scenario2:This gives the until 2 keywords that have got frequently changing URLS.To get more keywords pls change the limit value
+select a.keyword,a.crawl_dt,a.device,a.market,a.r_kw_url,a.kw_url from kw_rank1_ptn a inner join 
+(select keyword,max(r_kw_url)max_r_kw_url,market,device 
+from kw_rank1_ptn where r_kw_url >1 group by keyword,market,device order  by  max_r_kw_url desc limit 2) b
+on a.keyword=b.keyword and a.market=b.market and a.device=b.device order by keyword,market,device,crawl_dt;
+
+---For scenario3:to check on few keywords on convergence/divergence scrore
+select keyword,market,device,crawl_dt,convergance_score
+from kw_convergence_detail
+where keyword in ('360i digital marketing','360i search marketing','google update','google updates')
+order by keyword,market,device,crawl_dt;
+ 
